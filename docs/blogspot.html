@@ -1,0 +1,72 @@
+<article class="blog-content" lang="id" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.9;color:#4a5872;max-width:900px;margin:0 auto;padding:28px 22px;overflow-wrap:anywhere">
+<p style="font-size:11px;letter-spacing:2px;font-weight:bold;color:#2d4ec4;margin:0 0 14px">CATATAN PEMROGRAMAN WEB</p>
+<h1 style="font-size:30px;line-height:1.4;color:#263f9b;margin:0 0 24px">Membuat PPDB Online dengan Upload Pas Foto dan Bukti Pendaftaran Menggunakan PHP dan MySQL</h1>
+<p style="margin:0 0 18px">Saya mengembangkan <strong>RuangDaftar</strong>, aplikasi simulasi Penerimaan Peserta Didik Baru atau PPDB dengan PHP dan MySQL. Selain menyimpan identitas calon siswa, aplikasi menyediakan unggah pas foto, pratinjau sebelum disimpan, pembaruan foto, dan bukti pendaftaran yang dapat dicetak.</p>
+<p style="margin:0 0 18px">Dalam aplikasi pendaftaran, informasi teks perlu dilengkapi foto agar profil calon siswa lebih mudah diperiksa. Saya menggunakan format pas foto tegak dengan rasio 3:4. Setelah data dan foto tersimpan, pengguna dapat membuka bukti pendaftaran lalu mencetaknya atau menyimpan sebagai PDF melalui dialog cetak browser.</p>
+<p style="padding:18px;background:#edf1ff;border:1px solid #dce4ff;border-radius:8px;margin:24px 0"><a href="https://pweb-ppdb.vercel.app" style="color:#2d4ec4;font-weight:bold;text-decoration:underline">Buka demo RuangDaftar</a> · <a href="https://github.com/Boyeep/PWEB-PPDB" style="color:#2d4ec4;font-weight:bold;text-decoration:underline">Lihat source code di GitHub</a></p>
+<h2 style="font-size:23px;line-height:1.5;color:#263f9b;margin:32px 0 14px">1. Menyusun Alur Pendaftaran</h2>
+<p style="margin:0 0 18px">Alur dimulai dari formulir tambah siswa. Pengguna mengisi nama lengkap, sekolah asal, jenis kelamin, agama, dan alamat, lalu memilih pas foto. JavaScript menampilkan pratinjau, tetapi server tetap memeriksa seluruh isian dan file secara mandiri. Setelah penyimpanan berhasil, aplikasi mengarahkan pengguna ke halaman detail.</p>
+<p style="margin:0 0 18px">Halaman detail menampilkan identitas, foto, dan status kelengkapan. Bukti pendaftaran hanya tersedia untuk siswa yang sudah memiliki foto. Enam data awal merupakan data fiktif tanpa foto untuk mencoba proses melengkapi profil melalui halaman edit. Data awal tidak dibuat ulang setelah dihapus.</p>
+<figure style="margin:24px 0"><img src="https://raw.githubusercontent.com/Boyeep/PWEB-PPDB/main/public/assets/alur-ppdb.svg" width="1000" height="340" alt="Alur PPDB: formulir identitas dan foto, validasi PHP, penyimpanan database, lalu detail dan bukti cetak" style="display:block;width:100%;height:auto;border:1px solid #e0e6f2;border-radius:8px"><figcaption style="font-size:12px;text-align:center;margin-top:10px;color:#687792">Ilustrasi alur pemrosesan PPDB, bukan tangkapan layar aplikasi.</figcaption></figure>
+<h2 style="font-size:23px;line-height:1.5;color:#263f9b;margin:32px 0 14px">2. Menyiapkan Struktur Database</h2>
+<p style="margin:0 0 18px">Database lokal bernama <code>ppdb_sekolah</code> dengan tabel <code>calon_siswa</code>. Kolom identitas disimpan bersama waktu pendaftaran dan penanda ruang demo. Saya menambahkan <code>foto</code> untuk byte gambar, <code>foto_mime</code> untuk tipe gambar, serta <code>foto_nama</code> untuk nama acak yang dibuat server.</p>
+<pre style="padding:20px;background:#f4f6fc;border:1px solid #e0e6f2;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.8;margin:22px 0"><code class="language-sql">CREATE TABLE calon_siswa (
+    id INT NOT NULL AUTO_INCREMENT,
+    workspace_id CHAR(32) NOT NULL,
+    nama VARCHAR(64) NOT NULL,
+    alamat VARCHAR(255) NOT NULL,
+    jenis_kelamin VARCHAR(16) NOT NULL,
+    agama VARCHAR(16) NOT NULL,
+    sekolah_asal VARCHAR(64) NOT NULL,
+    created_at DATETIME NOT NULL,
+    foto MEDIUMBLOB NULL,
+    foto_mime VARCHAR(16) NULL,
+    foto_nama VARCHAR(40) NULL,
+    PRIMARY KEY (id),
+    INDEX siswa_workspace (workspace_id, id)
+);</code></pre>
+<p style="margin:0 0 18px">Saya memilih menyimpan byte foto di database supaya perubahan identitas dan gambar dapat dilakukan melalui satu perintah INSERT atau UPDATE. Untuk demo berukuran kecil, cara ini menjaga konsistensi data dan foto. Aplikasi membatasi maksimal 30 siswa dan total byte foto 8 MB per ruang demo. Setiap foto maksimal 1 MB.</p>
+<h2 style="font-size:23px;line-height:1.5;color:#263f9b;margin:32px 0 14px">3. Menyiapkan Folder dan Formulir Upload</h2>
+<p style="margin:0 0 18px">Folder <code>storage/images/</code> berada di luar document root. Folder dibuat otomatis dan dipakai untuk menampung unggahan sementara yang sudah lolos validasi. PHP memindahkan unggahan dengan <code>move_uploaded_file()</code>, membaca byte foto, lalu menghapus file sementara melalui blok <code>finally</code>. Nama file dari pengguna tidak digunakan sebagai path penyimpanan.</p>
+<p style="margin:0 0 18px">Formulir upload harus menggunakan metode POST dan <code>enctype="multipart/form-data"</code>. Input file bernama <code>foto</code> akan dibaca PHP melalui <code>$_FILES</code>. Atribut <code>accept</code> membantu pemilihan gambar di browser, sedangkan keputusan penerimaan tetap ditentukan server.</p>
+<pre style="padding:20px;background:#f4f6fc;border:1px solid #e0e6f2;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.8;margin:22px 0"><code class="language-html">&lt;form method=&quot;post&quot; action=&quot;/proses-pendaftaran.php&quot;
+      enctype=&quot;multipart/form-data&quot;&gt;
+    &lt;!-- Isian identitas dan token CSRF --&gt;
+    &lt;label for=&quot;foto&quot;&gt;Unggah pas foto&lt;/label&gt;
+    &lt;input type=&quot;file&quot; id=&quot;foto&quot; name=&quot;foto&quot;
+           accept=&quot;image/jpeg,image/png&quot; required&gt;
+    &lt;button type=&quot;submit&quot;&gt;Simpan pendaftaran&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+<p style="margin:0 0 18px">Pratinjau dibuat dengan <code>URL.createObjectURL()</code>. JavaScript memeriksa ukuran, tipe file, dan dimensi sebelum menampilkan gambar. Object URL sebelumnya dilepas ketika pengguna memilih foto lain. Pratinjau hanya berlaku di browser dan belum berarti file sudah tersimpan.</p>
+<h2 style="font-size:23px;line-height:1.5;color:#263f9b;margin:32px 0 14px">4. Memvalidasi Pas Foto di Server</h2>
+<p style="margin:0 0 18px">Validasi memeriksa kode kesalahan upload, sumber file melalui <code>is_uploaded_file()</code>, ukuran sebenarnya dengan <code>filesize()</code>, MIME melalui Fileinfo, dan informasi gambar menggunakan <code>getimagesize()</code>. Pemeriksaan ini tidak bergantung pada ekstensi atau MIME yang dikirim browser. SVG, GIF, dan berkas teks yang diberi ekstensi gambar ditolak.</p>
+<p style="margin:0 0 18px">Dimensi yang diizinkan adalah 150 x 200 sampai 2400 x 3200 piksel. Rasio lebar terhadap tinggi mendekati 0,75 dengan toleransi 0,025. Foto persegi atau mendatar harus dipotong terlebih dahulu. Ukuran cetak 3 x 4 cm berbeda dari jumlah piksel; rasio 3:4 dipakai untuk menjaga proporsi pada layar dan bukti cetak.</p>
+<pre style="padding:20px;background:#f4f6fc;border:1px solid #e0e6f2;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.8;margin:22px 0"><code class="language-php">$mime = (new finfo(FILEINFO_MIME_TYPE))-&gt;file($tmp);
+$info = @getimagesize($tmp);
+
+if (!isset($types[$mime]) || !$info || $info[2] !== $types[$mime][1]) {
+    return [null, &#x27;Isi file harus berupa gambar JPG atau PNG yang valid.&#x27;];
+}
+
+[$width, $height] = $info;
+if (abs($width / $height - 0.75) &gt; 0.025) {
+    return [null, &#x27;Gunakan foto tegak dengan rasio 3:4.&#x27;];
+}</code></pre>
+<p style="margin:0 0 18px">Setelah semua pemeriksaan lolos, server membuat nama acak menggunakan <code>bin2hex(random_bytes(16))</code>. Penyimpanan memakai prepared statements PDO dengan parameter foto bertipe <code>PDO::PARAM_LOB</code>. Jika ada kesalahan, formulir mempertahankan identitas dan menampilkan pesan di dekat kolom. Pengguna memilih ulang file karena browser tidak mengizinkan pengisian otomatis input file.</p>
+<h2 style="font-size:23px;line-height:1.5;color:#263f9b;margin:32px 0 14px">5. Menampilkan, Mengganti, dan Menghapus Foto</h2>
+<p style="margin:0 0 18px">Foto ditampilkan melalui endpoint <code>foto.php?id=...</code>. Endpoint mengambil foto berdasarkan ID sekaligus <code>workspace_id</code> milik sesi aktif. Respons menggunakan MIME tersimpan, nama acak, header <code>X-Content-Type-Options: nosniff</code>, serta larangan cache bersama. Mengganti ID pada URL tidak memberikan akses ke foto dari ruang demo lain.</p>
+<p style="margin:0 0 18px">Pada halaman edit, input foto bersifat opsional jika foto sebelumnya sudah tersedia. Membiarkan input kosong mempertahankan foto lama. Mengunggah gambar baru yang valid mengganti foto pada baris yang sama. Jika pengganti ditolak, identitas dan foto lama tetap tersimpan. Menghapus pendaftaran juga menghapus byte foto yang berada pada baris tersebut.</p>
+<p style="margin:0 0 18px">Semua perubahan memerlukan POST dan token CSRF yang sesuai sesi. Tombol hapus membuka halaman konfirmasi terlebih dahulu. Nilai pengguna yang ditampilkan pada HTML melalui <code>htmlspecialchars()</code>, sementara nilai SQL dikirim sebagai parameter terpisah.</p>
+<h2 style="font-size:23px;line-height:1.5;color:#263f9b;margin:32px 0 14px">6. Membuat Bukti Pendaftaran</h2>
+<p style="margin:0 0 18px">Halaman <code>bukti.php</code> menampilkan nomor pendaftaran, nama sekolah, tahun ajaran, waktu pendaftaran, identitas calon siswa, dan pas foto. Nomor dibuat dari ID data dan berlaku dalam ruang demo masing-masing. Aplikasi ini merupakan simulasi, sehingga bukti tidak menyatakan hasil seleksi atau penerimaan siswa nyata.</p>
+<p style="margin:0 0 18px">Tombol <strong>Cetak / Simpan PDF</strong> memanggil <code>window.print()</code>. CSS <code>@media print</code> menyembunyikan navigasi dan tombol, menggunakan halaman A4, serta memberi foto area 30 x 40 mm. Pengguna memilih printer atau opsi Save as PDF pada browser. Rendering cetak dan hasil PDF belum diverifikasi melalui browser otomatis di lingkungan pengerjaan.</p>
+<h2 style="font-size:23px;line-height:1.5;color:#263f9b;margin:32px 0 14px">7. Menjalankan Lokal dan Deployment</h2>
+<p style="margin:0 0 18px">Untuk mencoba lokal, gunakan PHP 8.2 atau lebih baru dengan ekstensi PDO, pdo_sqlite, mbstring, Fileinfo, dan cURL. Jalankan <code>php -S localhost:8000 -t public</code>. Mode awal membuat database SQLite secara otomatis. Untuk MySQL atau MariaDB, impor <code>database/mysql.sql</code> ke database khusus lalu atur <code>DB_DRIVER=mysql</code> dan variabel koneksi pada file <code>.env</code>.</p>
+<p style="margin:0 0 18px">Demo Vercel menggunakan PHP dengan SQLite dan snapshot di Vercel Blob privat. Snapshot mencakup sesi, identitas, dan byte foto, sehingga data tidak hanya berada pada filesystem sementara serverless. Setiap request membaca snapshot terbaru. Penulisan bersyarat menggunakan ETag mencegah dua perubahan bersamaan menimpa data tanpa diketahui. Snapshot dan cookie memiliki masa berlaku tujuh hari.</p>
+<p style="margin:0 0 18px">Pemisahan ruang menggunakan cookie HttpOnly dan SameSite=Lax, serta Secure pada HTTPS. Ruang demo ini belum memakai akun petugas. Gunakan identitas dan gambar contoh. Konfigurasi rahasia, database lokal, dan unggahan tidak dimasukkan ke repository GitHub.</p>
+<h2 style="font-size:23px;line-height:1.5;color:#263f9b;margin:32px 0 14px">8. Pengujian dan Hasil Pembelajaran</h2>
+<p style="margin:0 0 18px">Pengujian HTTP memeriksa unggah PNG, penggantian ke JPEG, foto lama saat edit tanpa unggahan, penolakan gambar tidak valid, dimensi, rasio, ukuran, token CSRF, escaping HTML, pembatasan akses antar sesi, bukti, pencarian, serta penghapusan data dan foto. Laporan hasil pengujian tersedia di repository dan catatan deployment menjelaskan batas verifikasi produksi.</p>
+<p style="margin:0 0 18px">Melalui proyek ini, saya mempelajari bahwa upload gambar memerlukan alur yang utuh: menerima formulir, memeriksa file, menyimpan secara konsisten, mengatur akses, menampilkan gambar, dan membersihkan datanya ketika pendaftaran dihapus. Bukti cetak melengkapi alur tersebut menjadi satu pengalaman pendaftaran yang lebih teratur.</p>
+<h2 style="font-size:23px;line-height:1.5;color:#263f9b;margin:32px 0 14px">Dokumentasi Teknis</h2>
+<ul style="padding-left:23px;margin:0 0 18px"><li><a href="https://www.php.net/manual/en/features.file-upload.php" style="color:#2d4ec4;text-decoration:underline">PHP Manual: Handling file uploads</a></li><li><a href="https://www.php.net/manual/en/function.move-uploaded-file.php" style="color:#2d4ec4;text-decoration:underline">PHP Manual: move_uploaded_file</a></li><li><a href="https://www.php.net/manual/en/book.fileinfo.php" style="color:#2d4ec4;text-decoration:underline">PHP Manual: Fileinfo</a></li><li><a href="https://vercel.com/docs/vercel-blob/using-blob-sdk" style="color:#2d4ec4;text-decoration:underline">Vercel Blob: operasi penyimpanan</a></li></ul>
+<p style="padding-top:20px;border-top:1px solid #e0e6f2;font-size:13px;color:#687792">Repository: <a href="https://github.com/Boyeep/PWEB-PPDB" style="color:#2d4ec4;text-decoration:underline">Boyeep/PWEB-PPDB</a> · Demo: <a href="https://pweb-ppdb.vercel.app" style="color:#2d4ec4;text-decoration:underline">pweb-ppdb.vercel.app</a></p></article>

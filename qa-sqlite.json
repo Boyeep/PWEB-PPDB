@@ -1,0 +1,156 @@
+{
+  "base_url": "http://127.0.0.1:8124",
+  "mode": "full",
+  "passed": 37,
+  "checks": [
+    {
+      "name": "registration form and multipart encoding",
+      "passed": true
+    },
+    {
+      "name": "dashboard opens",
+      "passed": true
+    },
+    {
+      "name": "guide and blog open",
+      "passed": true
+    },
+    {
+      "name": "missing photo rejected",
+      "passed": true
+    },
+    {
+      "name": "spoofed MIME rejected",
+      "passed": true
+    },
+    {
+      "name": "square photo rejected",
+      "passed": true
+    },
+    {
+      "name": "undersized photo rejected",
+      "passed": true
+    },
+    {
+      "name": "oversized upload rejected",
+      "passed": true
+    },
+    {
+      "name": "invalid CSRF rejected",
+      "passed": true
+    },
+    {
+      "name": "array upload rejected",
+      "passed": true
+    },
+    {
+      "name": "invalid enum rejected",
+      "passed": true
+    },
+    {
+      "name": "upload endpoint requires POST",
+      "passed": true
+    },
+    {
+      "name": "valid image with unsafe filename safely accepted",
+      "passed": true
+    },
+    {
+      "name": "student detail includes stored photo",
+      "passed": true
+    },
+    {
+      "name": "photo bytes persist between requests",
+      "passed": true
+    },
+    {
+      "name": "server determines MIME",
+      "passed": true
+    },
+    {
+      "name": "randomized safe stored filename",
+      "passed": true
+    },
+    {
+      "name": "private photo response is not cached",
+      "passed": true
+    },
+    {
+      "name": "receipt contains student, photo, and print control",
+      "passed": true
+    },
+    {
+      "name": "search returns new student",
+      "passed": true
+    },
+    {
+      "name": "session isolation detail.php",
+      "passed": true
+    },
+    {
+      "name": "session isolation foto.php",
+      "passed": true
+    },
+    {
+      "name": "session isolation bukti.php",
+      "passed": true
+    },
+    {
+      "name": "incomplete seed receipt unavailable",
+      "passed": true
+    },
+    {
+      "name": "edit without new photo accepted",
+      "passed": true
+    },
+    {
+      "name": "edit preserves existing photo",
+      "passed": true
+    },
+    {
+      "name": "invalid replacement rejected",
+      "passed": true
+    },
+    {
+      "name": "invalid replacement retains previous photo",
+      "passed": true
+    },
+    {
+      "name": "replace photo accepted",
+      "passed": true
+    },
+    {
+      "name": "replacement photo and MIME persist",
+      "passed": true
+    },
+    {
+      "name": "updated name persists",
+      "passed": true
+    },
+    {
+      "name": "HTML input stored as text",
+      "passed": true
+    },
+    {
+      "name": "stored HTML escaped on output",
+      "passed": true
+    },
+    {
+      "name": "GET delete shows confirmation",
+      "passed": true
+    },
+    {
+      "name": "confirmed delete accepted",
+      "passed": true
+    },
+    {
+      "name": "deleted row unavailable",
+      "passed": true
+    },
+    {
+      "name": "deleted photo unavailable",
+      "passed": true
+    }
+  ],
+  "visual_qa": false
+}

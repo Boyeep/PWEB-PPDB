@@ -1,0 +1,9 @@
+<?php
+require_once dirname(__DIR__) . '/config.php';
+$row = require_student(student_id($_GET['id'] ?? null));
+if (!$row['foto_mime']) { http_response_code(422); page_start('Lengkapi pas foto','siswa'); echo '<section class="panel empty"><h1>Lengkapi pas foto terlebih dahulu</h1><p>Bukti tersedia setelah data dan foto lengkap.</p><a class="button" href="/form-edit.php?id=' . $row['id'] . '">Lengkapi foto</a></section>'; page_end(); exit; }
+page_start('Bukti pendaftaran','siswa');
+?>
+<div class="receipt-tools"><a class="button secondary" href="/detail.php?id=<?=$row['id']?>">Kembali ke detail</a><button class="button" type="button" id="print-receipt">Cetak / Simpan PDF</button></div>
+<article class="receipt"><header class="receipt-header"><img src="/assets/favicon.svg" width="48" height="48" alt=""><div><p>PENERIMAAN PESERTA DIDIK BARU</p><h1>SMA Cakrawala</h1><p>Tahun ajaran 2026 / 2027</p></div><span class="tag">BUKTI PENDAFTARAN</span></header><div class="receipt-intro"><div><p>Nomor pendaftaran</p><h2>PPDB-<?=str_pad((string)$row['id'],4,'0',STR_PAD_LEFT)?></h2><p>Dicatat pada <?=e($row['created_at'])?> WIB</p></div><?=photo_tag($row)?></div><dl class="detail-grid"><?php foreach (['nama'=>'Nama lengkap','sekolah_asal'=>'Sekolah asal','jenis_kelamin'=>'Jenis kelamin','agama'=>'Agama','alamat'=>'Alamat lengkap'] as $key=>$label): ?><div class="<?=$key === 'alamat' ? 'full' : ''?>"><dt><?=$label?></dt><dd><?=nl2br(e($row[$key]))?></dd></div><?php endforeach ?></dl><div class="receipt-note"><strong>Data dan pas foto telah tersimpan.</strong><p>Simpan bukti ini sebagai arsip simulasi. Nomor berlaku dalam ruang demo Anda. Bukti ini tidak menyatakan kelulusan seleksi.</p></div><footer class="receipt-footer"><span>RuangDaftar / Simulasi PPDB</span><span>Dokumen dibuat dari data tersimpan</span></footer></article>
+<?php page_end(); ?>

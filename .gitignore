@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.vercel/
+node_modules/
+storage/*
+!storage/.gitkeep
+test-results/
+*.log
+
+.vercel
+.env*
+!.env.example
