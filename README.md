@@ -50,6 +50,8 @@ python tests/check_http.py
 
 Server uji default http://127.0.0.1:8124. Atur TEST_BASE_URL untuk target lain dan TEST_REPORT untuk nama laporan. TEST_NORMAL_ONLY=1 menjalankan alur normal untuk hosting. Setiap pengujian memakai sesi baru dan data fiktif sendiri. Laporan JSON mencatat pemeriksaan yang selesai dijalankan.
 
+Hasil verifikasi: **37 pemeriksaan SQLite, 37 pemeriksaan MySQL/MariaDB, dan 23 pemeriksaan produksi lolos**. Pengujian produksi mengakses domain publik tanpa kredensial login atau token automation. Tiga pemeriksaan tambahan membaca snapshot privat menggunakan kredensial Blob yang hanya berada dalam memori proses, untuk memastikan PNG tersimpan, JPEG pengganti tersimpan, dan baris hilang setelah dihapus. Laporan: qa-sqlite.json, qa-mysql.json, dan qa-production.json.
+
 Browser otomatis tidak tersedia di lingkungan pengerjaan. Layout desktop, ponsel, pratinjau JavaScript, dialog cetak, dan PDF belum diperiksa secara visual. Pengujian HTTP tidak menggantikan pemeriksaan tersebut.
 
 Ruang per cookie merupakan pemisahan demo, belum sistem akun petugas. Gunakan data dan gambar contoh. Font Inter disimpan lokal dengan lisensi OFL. Source dan artikel tidak menggunakan em dash atau en dash.

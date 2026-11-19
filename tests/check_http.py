@@ -31,6 +31,23 @@ def image(color, size=(300, 400), fmt='PNG'):
     Image.new('RGB', size, color).save(target, format=fmt)
     return target.getvalue()
 
+def durable_row(student_id):
+    import base64
+    import hashlib
+    import sqlite3
+    session_id = s.cookies.get('ruangdaftar_session')
+    pathname = 'ruangdaftar/sessions/' + hashlib.sha256(session_id.encode()).hexdigest() + '.json'
+    url = 'https://' + os.environ['TEST_BLOB_STORE'].lower() + '.private.blob.vercel-storage.com/' + pathname + '?cache=0'
+    response = requests.get(url, headers={'Authorization':'Bearer '+os.environ['TEST_BLOB_TOKEN']}, timeout=60)
+    response.raise_for_status()
+    snapshot = response.json()
+    database = sqlite3.connect(':memory:')
+    try:
+        database.deserialize(base64.b64decode(snapshot['database']))
+        return database.execute('SELECT nama,foto,foto_mime FROM calon_siswa WHERE id=?',(student_id,)).fetchone()
+    finally:
+        database.close()
+
 def send(data, blob=None, path='/proses-pendaftaran.php', filename='foto.png', mime='image/png'):
     return s.post(BASE + path, data=data, files={'foto': (filename, blob, mime)} if blob is not None else None, timeout=60, allow_redirects=False)
 
@@ -52,8 +69,8 @@ if not SAFE:
     check('upload endpoint requires POST', get('/proses-pendaftaran.php').status_code == 405)
 
 blob = image('royalblue')
-created = send(data, blob, filename='../../attempt.php', mime='application/octet-stream')
-check('valid image with unsafe filename safely accepted', created.status_code == 303)
+created = send(data, blob, filename='foto.png' if SAFE else '../../attempt.php', mime='image/png' if SAFE else 'application/octet-stream')
+check('valid photo accepted' if SAFE else 'valid image with unsafe filename safely accepted', created.status_code == 303)
 location = created.headers['Location']
 student_id = re.search(r'id=(\d+)', location).group(1)
 detail = get(location)
@@ -63,6 +80,9 @@ check('photo bytes persist between requests', photo.status_code == 200 and photo
 check('server determines MIME', photo.headers.get('Content-Type','').startswith('image/png'))
 check('randomized safe stored filename', bool(re.search(r'filename="[a-f0-9]{32}\.png"',photo.headers.get('Content-Disposition',''))))
 check('private photo response is not cached', 'no-store' in photo.headers.get('Cache-Control','') and photo.headers.get('X-Content-Type-Options') == 'nosniff')
+if os.getenv('TEST_BLOB_TOKEN'):
+    stored = durable_row(student_id)
+    check('private durable snapshot contains uploaded PNG', stored and stored[1] == blob and stored[2] == 'image/png')
 receipt = get('/bukti.php?id='+student_id)
 check('receipt contains student, photo, and print control', receipt.status_code == 200 and 'Siswa Uji PPDB' in receipt.text and 'print-receipt' in receipt.text and '/foto.php?id='+student_id in receipt.text)
 check('search returns new student', 'Siswa Uji PPDB' in get('/list-siswa.php?q=Siswa+Uji+PPDB').text)
@@ -87,6 +107,9 @@ new_blob = image('orange',fmt='JPEG')
 replacement = send(edited,new_blob,path='/proses-edit.php',filename='new.jpg',mime='image/jpeg')
 check('replace photo accepted', replacement.status_code == 303)
 check('replacement photo and MIME persist', get('/foto.php?id='+student_id).content == new_blob and get('/foto.php?id='+student_id).headers['Content-Type'].startswith('image/jpeg'))
+if os.getenv('TEST_BLOB_TOKEN'):
+    stored = durable_row(student_id)
+    check('private durable snapshot contains replacement JPEG', stored and stored[1] == new_blob and stored[2] == 'image/jpeg')
 check('updated name persists', 'Siswa Uji Diperbarui' in get(location).text)
 if not SAFE:
     unsafe = edited | {'nama':'<script>alert(1)</script>'}
@@ -100,6 +123,8 @@ deleted = s.post(BASE+'/hapus.php',data={'id':student_id,'csrf':csrf(confirmatio
 check('confirmed delete accepted', deleted.status_code == 303)
 check('deleted row unavailable', get(location).status_code == 404)
 check('deleted photo unavailable', get('/foto.php?id='+student_id).status_code == 404)
+if os.getenv('TEST_BLOB_TOKEN'):
+    check('private durable snapshot no longer contains deleted student', durable_row(student_id) is None)
 report = {'base_url':BASE,'mode':'normal' if SAFE else 'full','passed':len(checks),'checks':checks,'visual_qa':False}
 Path(os.getenv('TEST_REPORT','qa-sqlite.json')).write_text(json.dumps(report,indent=2),encoding='utf-8')
 print(f'{len(checks)} checks passed.')

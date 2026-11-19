@@ -1,0 +1,100 @@
+{
+  "base_url": "https://pweb-ppdb.vercel.app",
+  "mode": "normal",
+  "passed": 23,
+  "checks": [
+    {
+      "name": "registration form and multipart encoding",
+      "passed": true
+    },
+    {
+      "name": "dashboard opens",
+      "passed": true
+    },
+    {
+      "name": "guide and blog open",
+      "passed": true
+    },
+    {
+      "name": "valid photo accepted",
+      "passed": true
+    },
+    {
+      "name": "student detail includes stored photo",
+      "passed": true
+    },
+    {
+      "name": "photo bytes persist between requests",
+      "passed": true
+    },
+    {
+      "name": "server determines MIME",
+      "passed": true
+    },
+    {
+      "name": "randomized safe stored filename",
+      "passed": true
+    },
+    {
+      "name": "private photo response is not cached",
+      "passed": true
+    },
+    {
+      "name": "private durable snapshot contains uploaded PNG",
+      "passed": true
+    },
+    {
+      "name": "receipt contains student, photo, and print control",
+      "passed": true
+    },
+    {
+      "name": "search returns new student",
+      "passed": true
+    },
+    {
+      "name": "edit without new photo accepted",
+      "passed": true
+    },
+    {
+      "name": "edit preserves existing photo",
+      "passed": true
+    },
+    {
+      "name": "replace photo accepted",
+      "passed": true
+    },
+    {
+      "name": "replacement photo and MIME persist",
+      "passed": true
+    },
+    {
+      "name": "private durable snapshot contains replacement JPEG",
+      "passed": true
+    },
+    {
+      "name": "updated name persists",
+      "passed": true
+    },
+    {
+      "name": "GET delete shows confirmation",
+      "passed": true
+    },
+    {
+      "name": "confirmed delete accepted",
+      "passed": true
+    },
+    {
+      "name": "deleted row unavailable",
+      "passed": true
+    },
+    {
+      "name": "deleted photo unavailable",
+      "passed": true
+    },
+    {
+      "name": "private durable snapshot no longer contains deleted student",
+      "passed": true
+    }
+  ],
+  "visual_qa": false
+}

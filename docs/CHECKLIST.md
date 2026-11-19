@@ -13,6 +13,9 @@
 - [x] Pencarian, filter, paginasi, validasi, dan konfirmasi hapus.
 - [x] Token CSRF, query berparameter, dan escaping HTML.
 - [x] Blog HTML dengan gaya inline untuk Blogger.
+- [x] 37 pemeriksaan SQLite dan 37 pemeriksaan MySQL/MariaDB.
+- [x] 23 pemeriksaan produksi pada domain publik dengan akses HTTP anonim.
+- [x] Snapshot privat berisi unggahan, pengganti, dan hasil hapus yang benar.
 - [ ] QA visual desktop dan ponsel melalui browser.
 - [ ] Verifikasi dialog cetak dan hasil PDF melalui browser.
 
